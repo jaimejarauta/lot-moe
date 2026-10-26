@@ -36,7 +36,7 @@ class LOTMoEBlock(nn.Module):
         c: float = 1.0,
         beta: float = 1.0,
         epsilon: float = 0.05,
-        max_step: float = 0.1,
+        max_step: float = 1.0,
     ):
         super().__init__()
         d_ffn = d_ffn or int(4 * d_model * 2 / 3)
@@ -69,7 +69,9 @@ class LOTMoEBlock(nn.Module):
         # 2. Routing
         norm_x = self.moe_norm(x)
         flat_x = norm_x.view(B * S, D)
-        topk_weights, topk_indices, P_dense = self.router(flat_x, is_training=self.training)
+        topk_weights, topk_indices, P_dense = self.router(flat_x, is_training=self.training, causal=causal)
+
+        self.last_counts = torch.bincount(topk_indices.view(-1), minlength=self.num_experts).detach()
 
         # 3. Sparse Expert Dispatch
         flat_moe_out = torch.zeros_like(flat_x)

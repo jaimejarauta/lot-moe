@@ -45,3 +45,35 @@ def test_amortized_inference_mode():
     assert topk_w.shape == (1, K)
     assert topk_idx.shape == (1, K)
     assert torch.allclose(topk_w.sum(), torch.tensor(1.0), atol=1e-5)
+
+
+def test_causal_routing_ignores_other_tokens():
+    torch.manual_seed(0)
+    router = LogSinkhornRouter(d_model=16, num_experts=4, top_k=2)
+    x = torch.randn(64, 16)
+    _, idx_a, _ = router(x, is_training=False, causal=True)
+    x2 = x.clone()
+    x2[32:] = torch.randn(32, 16)
+    _, idx_b, _ = router(x2, is_training=False, causal=True)
+    assert torch.equal(idx_a[:32], idx_b[:32])
+
+
+def test_causal_topk_weights_not_saturated():
+    torch.manual_seed(0)
+    router = LogSinkhornRouter(d_model=64, num_experts=8, top_k=2)
+    torch.nn.init.normal_(router.gate.weight, std=0.1)
+    w, _, _ = router(torch.randn(2048, 64), is_training=True, causal=True)
+    assert (w[:, 1] < 1e-3).float().mean() < 0.01
+
+
+def test_causal_bias_balances_dispatch():
+    torch.manual_seed(0)
+    router = LogSinkhornRouter(d_model=16, num_experts=4, top_k=1, ema_gamma=0.1)
+    with torch.no_grad():
+        router.gate.weight[0] += 2.0  # skew toward expert 0
+    x = torch.randn(1024, 16).abs()
+    for _ in range(200):
+        router(x, is_training=True, causal=True)
+    _, idx, _ = router(x, is_training=False, causal=True)
+    load = torch.bincount(idx.view(-1), minlength=4).float() / idx.numel()
+    assert load.max() < 0.40

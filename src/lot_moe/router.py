@@ -52,10 +52,11 @@ class LogSinkhornRouter(nn.Module):
         h = self.gate(x_flat)  # (N, E)
 
         if causal:
-            # Causal autoregressive dual routing: avoids coupling tokens across time sequence
-            routing_weights = F.softmax(h / self.epsilon + self.amortized_v.unsqueeze(0), dim=-1)
+            # Per-token routing; the dual v biases selection only, gate weights stay unbiased (DeepSeek-V3 style)
+            routing_weights = F.softmax(h, dim=-1)
             P = routing_weights / float(N)
-            topk_weights, topk_indices = torch.topk(routing_weights, self.top_k, dim=-1)
+            _, topk_indices = torch.topk(h + self.amortized_v.unsqueeze(0), self.top_k, dim=-1)
+            topk_weights = routing_weights.gather(-1, topk_indices)
             topk_weights = topk_weights / torch.clamp(topk_weights.sum(dim=-1, keepdim=True), min=1e-7)
 
             if is_training:

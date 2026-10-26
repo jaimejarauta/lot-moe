@@ -46,7 +46,8 @@ class StandardMoEBlock(nn.Module):
         B, S, D = x.shape
         # Attention
         norm_x = self.attn_norm(x)
-        attn_out, _ = self.attn(norm_x, norm_x, norm_x)
+        causal_mask = torch.triu(torch.ones(S, S, dtype=torch.bool, device=x.device), diagonal=1)
+        attn_out, _ = self.attn(norm_x, norm_x, norm_x, attn_mask=causal_mask)
         x = x + attn_out
 
         # Standard Softmax MoE
@@ -108,11 +109,17 @@ class StandardMoETransformer(nn.Module):
         return logits, total_aux_loss, expert_counts
 
 
-def generate_skewed_data(num_samples: int, seq_len: int, vocab_size: int, device: torch.device):
-    """Generates synthetic tokens with skewed Zipfian frequencies to stress routing stability."""
-    weights = 1.0 / (torch.arange(1, vocab_size + 1, dtype=torch.float, device=device) ** 0.85)
-    tokens = torch.multinomial(weights, num_samples * seq_len, replacement=True)
-    return tokens.view(num_samples, seq_len)
+def generate_skewed_data(num_samples: int, seq_len: int, vocab_size: int, device: torch.device, seed: int = 0):
+    """Sparse bigram Markov chain with Zipfian start tokens: learnable structure, skewed routing load."""
+    gen = torch.Generator().manual_seed(seed)
+    zipf = 1.0 / (torch.arange(1, vocab_size + 1, dtype=torch.float) ** 0.85)
+    trans = torch.rand(vocab_size, vocab_size, generator=gen) ** 8  # few likely successors per token
+    trans = trans / trans.sum(-1, keepdim=True)
+    tokens = torch.empty(num_samples, seq_len, dtype=torch.long)
+    tokens[:, 0] = torch.multinomial(zipf, num_samples, replacement=True, generator=gen)
+    for t in range(1, seq_len):
+        tokens[:, t] = torch.multinomial(trans[tokens[:, t - 1]], 1, generator=gen).squeeze(1)
+    return tokens.to(device)
 
 
 def main():
@@ -133,6 +140,7 @@ def main():
     print(f"Device: {device} | Sequence Length: {args.seq_len} | Vocab Size: {args.vocab_size} | Steps: {args.steps}")
     print("=" * 84)
 
+    torch.manual_seed(0)
     data = generate_skewed_data(1000, args.seq_len, args.vocab_size, device)
     expert_scales = [4, 8]  # Expert sweep counts
     comparison_results = {}
@@ -211,8 +219,9 @@ def main():
             task_loss_lot = F.cross_entropy(lot_logits.reshape(-1, args.vocab_size), targets.reshape(-1))
 
             with torch.no_grad():
-                for P in lot_plans:
-                    lot_token_counts += P.sum(dim=0)
+                # Dispatched top-k counts, same convention as the standard arm
+                for layer in lot_model.layers:
+                    lot_token_counts += layer.last_counts
 
             lot_opt.zero_grad()
             task_loss_lot.backward()
@@ -266,10 +275,14 @@ def main():
     # Gate 2: Destructive Gradient Interference Verified on Baseline (cos_sim < 0)
     gate1_pass = all(res["lot_moe"]["starved_experts"] == 0 for res in comparison_results.values())
     gate2_pass = comparison_results["E_4"]["standard_moe"]["avg_gradient_interference_cosine"] < 0.0
-    overall_pass = gate1_pass and gate2_pass
+    # Gate 3: the claim itself; balance without aux loss must not cost task loss (tolerance 0.02 nats)
+    gate3_pass = all(res["lot_moe"]["final_task_loss"] <= res["standard_moe"]["final_task_loss"] + 0.02
+                     for res in comparison_results.values())
+    overall_pass = gate1_pass and gate2_pass and gate3_pass
 
     print("\nPre-Registered Empirical Gates:")
     print(f"  Gate 1 (Zero Starved Experts in LOT-MoE):     {'PASS' if gate1_pass else 'FAIL'} (0 starved across all scales)")
+    print(f"  Gate 3 (LOT task loss <= standard + 0.02):  {'PASS' if gate3_pass else 'FAIL'}")
     print(f"  Gate 2 (Negative Gradient Tug-of-War in AR): {'PASS' if gate2_pass else 'FAIL'} (cos = {comparison_results['E_4']['standard_moe']['avg_gradient_interference_cosine']:.4f} < 0)")
 
     # Save Provenance Manifest
@@ -283,6 +296,7 @@ def main():
             "results": comparison_results,
             "gate1_passed": gate1_pass,
             "gate2_passed": gate2_pass,
+            "gate3_passed": gate3_pass,
             "gate_status": "PASS" if overall_pass else "FAIL",
         }, f, indent=2)
 

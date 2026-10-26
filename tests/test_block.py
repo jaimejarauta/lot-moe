@@ -57,3 +57,28 @@ def test_transformer_end_to_end_backprop():
             assert p.grad is not None, f"Gradient missing for {name}"
             assert not torch.isnan(p.grad).any(), f"NaN in gradient of {name}"
 
+
+
+def test_block_training_routing_is_causal():
+    from lot_moe.block import LOTMoEBlock
+    torch.manual_seed(0)
+    blk = LOTMoEBlock(d_model=32, num_heads=4, num_experts=4, top_k=2).train()
+    x = torch.randn(2, 16, 32)
+    x2 = x.clone()
+    x2[:, 8:] = torch.randn(2, 8, 32)
+    v0 = blk.router.amortized_v.clone()
+    y1, _ = blk(x)
+    blk.router.amortized_v.copy_(v0)  # the bias update is causal in time; reset it to isolate token coupling
+    y2, _ = blk(x2)
+    assert torch.allclose(y1[:, :8], y2[:, :8], atol=1e-5)
+
+
+def test_residual_cap_scales_with_state_norm():
+    from lot_moe.residual import ConformalGeodesicResidual
+    res = ConformalGeodesicResidual(64)
+    x = torch.randn(1, 4, 64) * 8.0
+    delta = torch.randn(1, 4, 64) * 8.0
+    raw = res.norm(x + delta)
+    out = res(x, delta)
+    # a delta of the same size as x must still move the output substantially
+    assert (out - res.norm(x)).norm() > 0.3 * (raw - res.norm(x)).norm()

@@ -1,42 +1,43 @@
 {
   "benchmark": "lot_moe_vs_standard_moe",
-  "date": "2026-10-26T07:45:40.973181+00:00",
+  "date": "2026-10-26T21:23:13.562599+00:00",
   "hardware": "mps",
   "results": {
     "E_4": {
       "num_experts": 4,
       "standard_moe": {
-        "final_task_loss": 3.5763540267944336,
-        "final_aux_loss": 4.1030473709106445,
-        "routing_entropy_ratio": 0.9998968131573177,
+        "final_task_loss": 2.51711106300354,
+        "final_aux_loss": 4.025884628295898,
+        "routing_entropy_ratio": 0.9994672004954623,
         "starved_experts": 0,
-        "avg_gradient_interference_cosine": 0.027521450072526932
+        "avg_gradient_interference_cosine": -0.008001678649646541
       },
       "lot_moe": {
-        "final_task_loss": 3.7655866146087646,
+        "final_task_loss": 2.194420099258423,
         "final_aux_loss": 0.0,
-        "routing_entropy_ratio": 0.9995949836050534,
-        "starved_experts": 4
+        "routing_entropy_ratio": 0.9999785049164776,
+        "starved_experts": 0
       }
     },
     "E_8": {
       "num_experts": 8,
       "standard_moe": {
-        "final_task_loss": 3.50359845161438,
-        "final_aux_loss": 4.059150695800781,
-        "routing_entropy_ratio": 0.9995092789173735,
+        "final_task_loss": 2.7269856929779053,
+        "final_aux_loss": 4.0473527908325195,
+        "routing_entropy_ratio": 0.9990733602249866,
         "starved_experts": 0,
-        "avg_gradient_interference_cosine": 0.0040975179872475564
+        "avg_gradient_interference_cosine": 0.012049024873413146
       },
       "lot_moe": {
-        "final_task_loss": 3.588951587677002,
+        "final_task_loss": 2.5362741947174072,
         "final_aux_loss": 0.0,
-        "routing_entropy_ratio": 0.9995449366536524,
-        "starved_experts": 8
+        "routing_entropy_ratio": 0.9999916329254934,
+        "starved_experts": 0
       }
     }
   },
-  "gate1_passed": false,
-  "gate2_passed": false,
-  "gate_status": "FAIL"
+  "gate1_passed": true,
+  "gate2_passed": true,
+  "gate3_passed": true,
+  "gate_status": "PASS"
 }
