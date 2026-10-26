@@ -78,7 +78,8 @@ class LogSinkhornRouter(nn.Module):
             routing_weights = float(N) * P
         else:
             # Online inference mode using amortized dual potential
-            routing_weights = F.softmax((h + self.amortized_v.unsqueeze(0)) / self.epsilon, dim=-1)
+            # Note: amortized_v is already in log-domain (paired with M = h / epsilon)
+            routing_weights = F.softmax(h / self.epsilon + self.amortized_v.unsqueeze(0), dim=-1)
             P = routing_weights / float(N)
 
         # Top-K sparse selection
