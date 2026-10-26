@@ -85,3 +85,4 @@ class LOTMoEBlock(nn.Module):
         moe_out = flat_moe_out.view(B, S, D)
         x = self.res2(x, moe_out)
         return x, P_dense
+

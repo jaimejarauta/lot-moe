@@ -1,0 +1,9 @@
+{
+  "benchmark": "tree_metric_distortion",
+  "date": "2026-10-26T07:46:08.825030+00:00",
+  "nodes": 63,
+  "euclidean_distortion": 0.29410338401794434,
+  "lorentz_distortion": 0.4987959563732147,
+  "distortion_reduction_pct": -69.59884975100502,
+  "gate_passed": false
+}

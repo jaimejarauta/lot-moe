@@ -38,3 +38,4 @@ class LorentzMath:
         neg_c_inner = torch.clamp(-c * inner, min=1.0 + 1e-6)
         dist = torch.acosh(neg_c_inner) / (c ** 0.5)
         return dist ** 2
+

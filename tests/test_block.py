@@ -56,3 +56,4 @@ def test_transformer_end_to_end_backprop():
         if p.requires_grad:
             assert p.grad is not None, f"Gradient missing for {name}"
             assert not torch.isnan(p.grad).any(), f"NaN in gradient of {name}"
+

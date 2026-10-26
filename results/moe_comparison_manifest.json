@@ -1,0 +1,42 @@
+{
+  "benchmark": "lot_moe_vs_standard_moe",
+  "date": "2026-10-26T07:45:40.973181+00:00",
+  "hardware": "mps",
+  "results": {
+    "E_4": {
+      "num_experts": 4,
+      "standard_moe": {
+        "final_task_loss": 3.5763540267944336,
+        "final_aux_loss": 4.1030473709106445,
+        "routing_entropy_ratio": 0.9998968131573177,
+        "starved_experts": 0,
+        "avg_gradient_interference_cosine": 0.027521450072526932
+      },
+      "lot_moe": {
+        "final_task_loss": 3.7655866146087646,
+        "final_aux_loss": 0.0,
+        "routing_entropy_ratio": 0.9995949836050534,
+        "starved_experts": 4
+      }
+    },
+    "E_8": {
+      "num_experts": 8,
+      "standard_moe": {
+        "final_task_loss": 3.50359845161438,
+        "final_aux_loss": 4.059150695800781,
+        "routing_entropy_ratio": 0.9995092789173735,
+        "starved_experts": 0,
+        "avg_gradient_interference_cosine": 0.0040975179872475564
+      },
+      "lot_moe": {
+        "final_task_loss": 3.588951587677002,
+        "final_aux_loss": 0.0,
+        "routing_entropy_ratio": 0.9995449366536524,
+        "starved_experts": 8
+      }
+    }
+  },
+  "gate1_passed": false,
+  "gate2_passed": false,
+  "gate_status": "FAIL"
+}

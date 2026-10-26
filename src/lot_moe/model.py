@@ -58,3 +58,4 @@ class LOTMoETransformer(nn.Module):
 
         logits = self.lm_head(self.final_norm(x))
         return logits, transport_plans
+

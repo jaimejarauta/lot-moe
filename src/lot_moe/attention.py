@@ -92,3 +92,4 @@ class DualCurvatureAttention(nn.Module):
         full_out = torch.cat(attn_outputs, dim=1)
         full_out = full_out.transpose(1, 2).contiguous().view(B, S, D)
         return self.out_proj(full_out)
+

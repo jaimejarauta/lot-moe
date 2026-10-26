@@ -25,3 +25,4 @@ class ConformalGeodesicResidual(nn.Module):
         step = self.max_step * torch.tanh(norm_delta / self.max_step)
         clamped_delta = (step / norm_delta) * delta
         return self.norm(x + clamped_delta)
+

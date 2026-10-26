@@ -41,3 +41,4 @@ def test_lorentz_distance_metric():
     v = LorentzMath.spatial_to_lorentz(v_sp, c=c)
     dist_uv = LorentzMath.lorentz_distance_sq(u, v, c=c)
     assert (dist_uv >= 0.0).all()
+
