@@ -1,0 +1,26 @@
+{
+  "architecture": "lot-moe",
+  "description": "Lorentzian Optimal Transport Mixture of Experts",
+  "date": "2026-10-26T07:19:50.368700+00:00",
+  "hardware": "mps",
+  "steps": 150,
+  "batch_size": 8,
+  "seq_len": 32,
+  "vocab_size": 64,
+  "num_experts": 4,
+  "top_k": 2,
+  "train_elapsed_sec": 15.08531403541565,
+  "initial_loss": 4.2519001960754395,
+  "final_loss": 3.51743483543396,
+  "routing_entropy_ratio": 0.9993210152422289,
+  "auxiliary_loss": 0.0,
+  "expert_allocations": [
+    108.3023910522461,
+    108.1665267944336,
+    120.18175506591797,
+    113.34943389892578
+  ],
+  "gate1_passed": true,
+  "gate2_passed": true,
+  "gate_status": "PASS"
+}

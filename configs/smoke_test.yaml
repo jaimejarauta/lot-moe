@@ -1,0 +1,15 @@
+architecture: lot-moe
+d_model: 64
+num_layers: 3
+num_heads: 4
+num_experts: 4
+top_k: 2
+vocab_size: 64
+seq_len: 32
+steps: 150
+batch_size: 8
+lr: 0.002
+c: 1.0
+beta: 1.0
+epsilon: 0.05
+auxiliary_loss: 0.0
