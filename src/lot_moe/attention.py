@@ -55,16 +55,19 @@ class DualCurvatureAttention(nn.Module):
             v_h = v[:, :self.num_hyp_heads]
 
             inv_c = 1.0 / self.c
-            q0 = torch.sqrt(inv_c + torch.sum(q_h ** 2, dim=-1, keepdim=True))
-            k0 = torch.sqrt(inv_c + torch.sum(k_h ** 2, dim=-1, keepdim=True))
+            # Cancellation-free Lorentzian inner product: -c<q,k>_L = 1 + c/2 (||q-k||^2 - (q0-k0)^2)
+            # Evaluated in fp32 accumulation to prevent catastrophic cancellation in half/bfloat16
+            qf, kf = q_h.float(), k_h.float()
+            qn = (qf * qf).sum(-1, keepdim=True)
+            kn = (kf * kf).sum(-1, keepdim=True)
+            q0 = torch.sqrt(inv_c + qn)
+            k0 = torch.sqrt(inv_c + kn)
+            d_sp = (qn + kn.transpose(-2, -1) - 2 * torch.matmul(qf, kf.transpose(-2, -1))).clamp_min(0.0)
+            d_0 = (qn - kn.transpose(-2, -1)) / (q0 + k0.transpose(-2, -1))
+            neg_c_inner = (1.0 + 0.5 * self.c * (d_sp - d_0 ** 2)).clamp_min(1.0 + 1e-6)
 
-            time_inner = torch.matmul(q0, k0.transpose(-2, -1))
-            space_inner = torch.matmul(q_h, k_h.transpose(-2, -1))
-            minkowski_matrix = -time_inner + space_inner
-
-            neg_c_inner = torch.clamp(-self.c * minkowski_matrix, min=1.0 + 1e-6)
             dist_sq = (torch.acosh(neg_c_inner) ** 2) / self.c
-            hyp_logits = -self.beta * dist_sq
+            hyp_logits = (-self.beta * dist_sq).to(q_h.dtype)
 
             if causal:
                 mask = torch.triu(torch.full((S, S), float("-inf"), device=x.device), diagonal=1)

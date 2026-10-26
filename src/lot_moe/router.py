@@ -36,11 +36,12 @@ class LogSinkhornRouter(nn.Module):
         self.register_buffer("amortized_v", torch.zeros(num_experts))
 
     def forward(
-        self, x_flat: torch.Tensor, is_training: bool = True
+        self, x_flat: torch.Tensor, is_training: bool = True, causal: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Args:
             x_flat: (N, D) where N = B * S
             is_training: bool
+            causal: bool. If True, uses Sinkhorn-amortized dual bias routing (zero causality leakage).
         Returns:
             topk_weights: (N, K) normalized weights
             topk_indices: (N, K) selected expert indices
@@ -49,6 +50,23 @@ class LogSinkhornRouter(nn.Module):
         N, D = x_flat.shape
         E = self.num_experts
         h = self.gate(x_flat)  # (N, E)
+
+        if causal:
+            # Causal autoregressive dual routing: avoids coupling tokens across time sequence
+            routing_weights = F.softmax(h / self.epsilon + self.amortized_v.unsqueeze(0), dim=-1)
+            P = routing_weights / float(N)
+            topk_weights, topk_indices = torch.topk(routing_weights, self.top_k, dim=-1)
+            topk_weights = topk_weights / torch.clamp(topk_weights.sum(dim=-1, keepdim=True), min=1e-7)
+
+            if is_training:
+                with torch.no_grad():
+                    # Update amortized dual from dispatched top-k expert counts (DeepSeek-V3 style)
+                    dispatched_counts = torch.bincount(topk_indices.view(-1), minlength=E).float()
+                    log_load = torch.log(dispatched_counts.clamp_min(1e-6))
+                    log_target = math.log(float(N * self.top_k) / float(E))
+                    self.amortized_v.add_(self.ema_gamma * (log_target - log_load))
+
+            return topk_weights, topk_indices, P
 
         if is_training:
             M = h / self.epsilon
@@ -78,7 +96,6 @@ class LogSinkhornRouter(nn.Module):
             routing_weights = float(N) * P
         else:
             # Online inference mode using amortized dual potential
-            # Note: amortized_v is already in log-domain (paired with M = h / epsilon)
             routing_weights = F.softmax(h / self.epsilon + self.amortized_v.unsqueeze(0), dim=-1)
             P = routing_weights / float(N)
 
