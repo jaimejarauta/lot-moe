@@ -1,0 +1,19 @@
+{
+  "project": "lot-moe",
+  "run_type": "colab_t4_scaled",
+  "hardware": "Google Colab NVIDIA T4 GPU",
+  "date": "2026-10-26T13:20:00Z",
+  "num_experts": 16,
+  "training_steps": 1000,
+  "training_elapsed_seconds": 69.72,
+  "initial_cross_entropy": 5.1642,
+  "final_cross_entropy": 3.4226,
+  "routing_entropy_pct": 99.97,
+  "auxiliary_loss": 0.0,
+  "target_entropy_pct": 95.0,
+  "expert_allocation_min": 58.83,
+  "expert_allocation_max": 65.73,
+  "gate_name": "Pre-Registered Gate 1 (Load Entropy >= 95% with L_aux=0)",
+  "gate_status": "PASS",
+  "credits_consumed": 0.035
+}
