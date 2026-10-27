@@ -1,43 +1,59 @@
 {
   "benchmark": "lot_moe_vs_standard_moe",
-  "date": "2026-10-26T21:23:13.562599+00:00",
+  "date": "2026-10-27T14:02:14.483314+00:00",
   "hardware": "mps",
   "results": {
     "E_4": {
       "num_experts": 4,
       "standard_moe": {
-        "final_task_loss": 2.51711106300354,
-        "final_aux_loss": 4.025884628295898,
-        "routing_entropy_ratio": 0.9994672004954623,
+        "final_task_loss": 4.318325519561768,
+        "final_aux_loss": 4.043979644775391,
+        "routing_entropy_ratio": 0.9958505773304683,
         "starved_experts": 0,
-        "avg_gradient_interference_cosine": -0.008001678649646541
+        "avg_gradient_interference_cosine": -0.053975000977516174
       },
       "lot_moe": {
-        "final_task_loss": 2.194420099258423,
+        "final_task_loss": 4.263433456420898,
         "final_aux_loss": 0.0,
-        "routing_entropy_ratio": 0.9999785049164776,
+        "routing_entropy_ratio": 0.9981963346969116,
         "starved_experts": 0
       }
     },
     "E_8": {
       "num_experts": 8,
       "standard_moe": {
-        "final_task_loss": 2.7269856929779053,
-        "final_aux_loss": 4.0473527908325195,
-        "routing_entropy_ratio": 0.9990733602249866,
+        "final_task_loss": 4.262868881225586,
+        "final_aux_loss": 4.101292610168457,
+        "routing_entropy_ratio": 0.9936833092918456,
         "starved_experts": 0,
-        "avg_gradient_interference_cosine": 0.012049024873413146
+        "avg_gradient_interference_cosine": -0.14847655594348907
       },
       "lot_moe": {
-        "final_task_loss": 2.5362741947174072,
+        "final_task_loss": 4.332299709320068,
         "final_aux_loss": 0.0,
-        "routing_entropy_ratio": 0.9999916329254934,
+        "routing_entropy_ratio": 0.9909186308516756,
+        "starved_experts": 0
+      }
+    },
+    "E_16": {
+      "num_experts": 16,
+      "standard_moe": {
+        "final_task_loss": 4.278170108795166,
+        "final_aux_loss": 4.174490451812744,
+        "routing_entropy_ratio": 0.991620148084545,
+        "starved_experts": 0,
+        "avg_gradient_interference_cosine": 0.04768300801515579
+      },
+      "lot_moe": {
+        "final_task_loss": 4.288310527801514,
+        "final_aux_loss": 0.0,
+        "routing_entropy_ratio": 0.9857158976890994,
         "starved_experts": 0
       }
     }
   },
   "gate1_passed": true,
   "gate2_passed": true,
-  "gate3_passed": true,
-  "gate_status": "PASS"
+  "gate3_passed": false,
+  "gate_status": "FAIL"
 }
