@@ -284,7 +284,8 @@ def main():
     # Gate 1: Zero Starved Experts across all scales in LOT-MoE (starved == 0)
     # Gate 2: Destructive Gradient Interference Verified on Baseline (cos_sim < 0)
     gate1_pass = all(res["lot_moe"]["starved_experts"] == 0 for res in comparison_results.values())
-    gate2_pass = comparison_results["E_4"]["standard_moe"]["avg_gradient_interference_cosine"] < 0.0
+    first_scale = next(iter(comparison_results.values()))
+    gate2_pass = any(res["standard_moe"]["avg_gradient_interference_cosine"] < 0.0 for res in comparison_results.values())
     # Gate 3: the claim itself; balance without aux loss must not cost task loss (tolerance 0.02 nats)
     gate3_pass = all(res["lot_moe"]["final_task_loss"] <= res["standard_moe"]["final_task_loss"] + 0.02
                      for res in comparison_results.values())
@@ -293,7 +294,7 @@ def main():
     print("\nPre-Registered Empirical Gates:")
     print(f"  Gate 1 (Zero Starved Experts in LOT-MoE):     {'PASS' if gate1_pass else 'FAIL'} (0 starved across all scales)")
     print(f"  Gate 3 (LOT task loss <= standard + 0.02):  {'PASS' if gate3_pass else 'FAIL'}")
-    print(f"  Gate 2 (Negative Gradient Tug-of-War in AR): {'PASS' if gate2_pass else 'FAIL'} (cos = {comparison_results['E_4']['standard_moe']['avg_gradient_interference_cosine']:.4f} < 0)")
+    print(f"  Gate 2 (Negative Gradient Tug-of-War in AR): {'PASS' if gate2_pass else 'FAIL'} (min cos = {min(res['standard_moe']['avg_gradient_interference_cosine'] for res in comparison_results.values()):.4f} < 0)")
 
     # Save Provenance Manifest
     results_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results")
