@@ -132,9 +132,19 @@ def main():
     parser.add_argument("--num-layers", type=int, default=2, help="Number of transformer layers")
     parser.add_argument("--num-heads", type=int, default=4, help="Attention heads")
     parser.add_argument("--aux-alpha", type=float, default=0.01, help="Standard MoE auxiliary loss weight")
+    parser.add_argument("--experts", type=int, nargs="+", default=[4, 8], help="Expert sweep counts")
+    parser.add_argument("--device", type=str, default=None, help="Device to run on (cuda, mps, cpu)")
     args = parser.parse_args()
 
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    if args.device:
+        device = torch.device(args.device)
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
     print("=" * 84)
     print("STAGE 2 EMPIRICAL BENCHMARK: LOT-MOE vs STANDARD SOFTMAX MOE WITH AUXILIARY LOSS")
     print(f"Device: {device} | Sequence Length: {args.seq_len} | Vocab Size: {args.vocab_size} | Steps: {args.steps}")
@@ -142,7 +152,7 @@ def main():
 
     torch.manual_seed(0)
     data = generate_skewed_data(1000, args.seq_len, args.vocab_size, device)
-    expert_scales = [4, 8]  # Expert sweep counts
+    expert_scales = args.experts
     comparison_results = {}
 
     for E in expert_scales:

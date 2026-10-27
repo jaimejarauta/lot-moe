@@ -78,9 +78,17 @@ def main():
     parser.add_argument("--num-experts", type=int, default=4, help="Number of experts")
     parser.add_argument("--top-k", type=int, default=2, help="Top-K routing")
     parser.add_argument("--lr", type=float, default=2e-3, help="Learning rate")
+    parser.add_argument("--device", type=str, default=None, help="Device to run on (cuda, mps, cpu)")
     args = parser.parse_args()
 
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    if args.device:
+        device = torch.device(args.device)
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     print("=" * 72)
     print("LOT-MOE: LORENTZIAN OPTIMAL TRANSPORT MOE SMOKE BENCHMARK")
     print(f"Device: {device} | Steps: {args.steps} | Experts: {args.num_experts} | Top-K: {args.top_k}")
